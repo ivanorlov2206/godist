@@ -6,9 +6,11 @@ import (
 )
 
 func main() {
-	fmt.Println("Fuck")
-	forwarder := portforwarder.NewUPNPForwarder("33333", "33334", "33334")
-	portforwarder.StartForwarding(forwarder)
+	fmt.Println("Starting port forwarding")
+	forwarder := portforwarder.NewUPNPForwarder(33333, 33334, 33334)
+	readyStream := make(chan string)
+	portforwarder.StartForwarding(forwarder, readyStream)
+	<-readyStream
 	for {
 
 	}
