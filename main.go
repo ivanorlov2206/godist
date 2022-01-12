@@ -7,9 +7,9 @@ import (
 
 func main() {
 	fmt.Println("Starting port forwarding")
-	forwarder := portforwarder.NewUPNPForwarder(33333, 33334, 33334)
+	forwarder := portforwarder.NewUPNPForwarder(22222, 33334, 33334)
 	readyStream := make(chan string)
-	portforwarder.StartForwarding(forwarder, readyStream)
+	portforwarder.StartForwarding("tcp", forwarder, readyStream)
 	<-readyStream
 	for {
 

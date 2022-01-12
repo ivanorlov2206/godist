@@ -2,20 +2,19 @@ package portforwarder
 
 import (
 	"fmt"
+	"io"
 	"net"
-	"os"
 	"net/http"
 	"net/url"
+	"os"
 	"strconv"
 	"strings"
-	"io"
 )
 
 func sendMappingRequest(interfaces map[string]bool, action string, req string) bool {
-	client := &http.Client {}
+	client := &http.Client{}
 	for addr := range interfaces {
 		req, err := http.NewRequest("POST", addr, strings.NewReader(req))
-		fmt.Println("Here")
 		if err == nil {
 			req.Header.Add("Content-type", `text/xml; charset="utf-8"`)
 			req.Header.Add("SOAPAction", action)
@@ -34,7 +33,8 @@ func sendMappingRequest(interfaces map[string]bool, action string, req string) b
  0 - add mapping
  1 - remove mapping
 */
-func (upnpForwarder UPNPForwarder) changeForwarding(mode int, readyStream chan string) {
+func (upnpForwarder UPNPForwarder) changeForwarding(protocol string, mode int, readyStream chan string) {
+	protocol = strings.ToUpper(protocol)
 	var upnpInformationStream chan UPNPInformation
 	upnpInformationStream = make(chan UPNPInformation)
 	fmt.Println(upnpForwarder.upnpInterfaces)
@@ -55,29 +55,30 @@ func (upnpForwarder UPNPForwarder) changeForwarding(mode int, readyStream chan s
 					fmt.Printf("Got from upnpInformationStream: location is %s!\n", locationS)
 					resp, err := http.Get(upnpInformation.Value)
 					if err != nil {
-						fmt.Println("Error: can't get information from router");
+						fmt.Println("Error: can't get information from router")
 						continue
 					}
 					defer resp.Body.Close()
 					data, err := io.ReadAll(resp.Body)
 					if err != nil {
-						fmt.Println("Error: can't read information from router");
+						fmt.Println("Error: can't read information from router")
 						continue
 					}
 					sdata := string(data)
-					ParseUPNPInterfaces(sdata, locationUrl.Scheme + "://" + locationUrl.Host, &upnpForwarder.upnpInterfaces)
-
+					ParseUPNPInterfaces(sdata, locationUrl.Scheme+"://"+locationUrl.Host, &upnpForwarder.upnpInterfaces)
 					if mode == 0 {
 						mRes = sendMappingRequest(upnpForwarder.upnpInterfaces, addPortMappingUrl, fmt.Sprintf(addPortMappingRequestFormat,
-																																															upnpForwarder.OuterPort,
-																																															upnpForwarder.InnerPort,
-																																															localIp))
+							upnpForwarder.OuterPort,
+							protocol,
+							upnpForwarder.InnerPort,
+							localIp))
 					} else if mode == 1 {
 						mRes = sendMappingRequest(upnpForwarder.upnpInterfaces, deletePortMappingUrl, fmt.Sprintf(deletePortMappingRequestFormat,
-																																															upnpForwarder.OuterPort))
+							protocol,
+							upnpForwarder.OuterPort))
 					}
 					if mRes {
-						readyStream<-"finished"
+						readyStream <- "finished"
 						return
 					}
 				}
@@ -87,36 +88,38 @@ func (upnpForwarder UPNPForwarder) changeForwarding(mode int, readyStream chan s
 		fmt.Println(1212)
 		if mode == 0 {
 			mRes = sendMappingRequest(upnpForwarder.upnpInterfaces, addPortMappingUrl, fmt.Sprintf(addPortMappingRequestFormat,
-																																												upnpForwarder.OuterPort,
-																																												upnpForwarder.InnerPort,
-																																												localIp))
+				upnpForwarder.OuterPort,
+				upnpForwarder.InnerPort,
+				localIp))
 		} else if mode == 1 {
 			mRes = sendMappingRequest(upnpForwarder.upnpInterfaces, deletePortMappingUrl, fmt.Sprintf(deletePortMappingRequestFormat,
-																																												upnpForwarder.OuterPort))
+				upnpForwarder.OuterPort))
 		}
 		if mRes {
-			readyStream<-"finished"
+			readyStream <- "finished"
 			return
 		}
 	}
 }
 func (upnpForwarder UPNPForwarder) ssdpReq(upnpInformationStream chan UPNPInformation) {
 	laddr, err := net.ResolveUDPAddr(ssdpProto, ssdpBindAddr+":"+strconv.Itoa(upnpForwarder.SsdpPort))
-	raddr := net.UDPAddr{IP: net.ParseIP(ssdpAddr), Port: ssdpServerPort}
+	if err != nil {
+		panic(err)
+	}
+	raddr, _ := net.ResolveUDPAddr(ssdpProto, ssdpAddr+":"+strconv.Itoa(ssdpServerPort))
 	var readyStream chan string
 	readyStream = make(chan string)
 	go upnpForwarder.listenForSsdpResponse(readyStream, upnpInformationStream)
 	_ = <-readyStream //ready
 
-	conn, err := net.DialUDP(ssdpProto, laddr, &raddr)
+	conn, err := net.ListenUDP(ssdpProto, laddr)
+	defer conn.Close()
 	if err != nil {
 		fmt.Printf("Cannot dial to this addr %s:%d\nError: %s\n", ssdpBindAddr, upnpForwarder.SsdpPort, err.Error())
 		os.Exit(1)
 	}
-	fmt.Fprintf(conn, ssdpSearchRequest)
-
-
-	defer conn.Close()
+	fmt.Println(raddr)
+	conn.WriteToUDP([]byte(ssdpSearchRequest), raddr)
 }
 
 func (upnpForwarder UPNPForwarder) listenForSsdpResponse(readyStream chan string, upnpInformationStream chan UPNPInformation) {
@@ -139,8 +142,8 @@ func (upnpForwarder UPNPForwarder) listenForSsdpResponse(readyStream chan string
 		responseString := string(buf[:])
 		params := ParseSSDPResponse(responseString)
 		//fmt.Println(params);
-		st, okSt := params["ST"];
-		location, okLoc := params["LOCATION"];
+		st, okSt := params["ST"]
+		location, okLoc := params["LOCATION"]
 		if okSt && okLoc && st == "upnp:rootdevice" {
 			fmt.Printf("Root upnp device has location: %s\n", location)
 			upnpInformationStream <- UPNPInformation{Key: "location", Value: location}

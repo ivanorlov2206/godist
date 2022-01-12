@@ -1,8 +1,8 @@
 package portforwarder
 
-func StartForwarding(forwarder Portforwarder, readyStream chan string) {
-	go forwarder.changeForwarding(0, readyStream)
+func StartForwarding(protocol string, forwarder Portforwarder, readyStream chan string) {
+	go forwarder.changeForwarding(protocol, 0, readyStream)
 }
-func StopForwarding(forwarder Portforwarder, readyStream chan string) {
-	go forwarder.changeForwarding(1, readyStream)
+func StopForwarding(protocol string, forwarder Portforwarder, readyStream chan string) {
+	go forwarder.changeForwarding(protocol, 1, readyStream)
 }

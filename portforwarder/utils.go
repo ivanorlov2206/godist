@@ -2,8 +2,8 @@ package portforwarder
 
 import (
 	"net"
-	"strings"
 	"regexp"
+	"strings"
 )
 
 func GetOutboundIP() net.IP {
@@ -16,7 +16,6 @@ func GetOutboundIP() net.IP {
 	localAddr := conn.LocalAddr().(*net.UDPAddr)
 	return localAddr.IP
 }
-
 
 func ParseSSDPResponse(response string) map[string]string {
 	res := make(map[string]string)
@@ -31,9 +30,9 @@ func ParseSSDPResponse(response string) map[string]string {
 }
 
 func ParseUPNPInterfaces(data string, prefix string, interfaces *map[string]bool) {
-	r := regexp.MustCompile(`<controlURL>([a-zA-Z/: ]+)</controlURL>`)
+	r := regexp.MustCompile(`<controlURL>([0-9a-zA-Z/: ]+)</controlURL>`)
 	matches := r.FindAllStringSubmatch(data, -1)
 	for _, v := range matches {
-		(*interfaces)[prefix + v[1]] = true
+		(*interfaces)[prefix+v[1]] = true
 	}
 }

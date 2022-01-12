@@ -1,18 +1,19 @@
 package portforwarder
 
 type Portforwarder interface {
-	changeForwarding(mode int, readyStream chan string)
+	changeForwarding(protocol string, mode int, readyStream chan string)
 }
 
 const (
-	ssdpBindAddr   = "0.0.0.0"
+	ssdpBindAddr   = ""
 	ssdpProto      = "udp"
 	ssdpAddr       = "239.255.255.250"
 	ssdpServerPort = 1900
 
 	ssdpSearchRequest = "M-SEARCH * HTTP/1.1\r\n" +
 		"ST: upnp:rootdevice\r\n" +
-		"MX: 3\r\n" +
+		"MX: 5\r\n" +
+		"User-Agent: Google Chrome/96.0.4664.110 Windows\r\n" +
 		"MAN: \"ssdp:discover\"\r\n" +
 		"HOST: 239.255.255.250:1900\r\n\r\n"
 
@@ -22,7 +23,7 @@ const (
 	        <u:AddPortMapping xmlns:u="urn:schemas-upnp-org:service:WANIPConnection:1">
 	          <NewRemoteHost></NewRemoteHost>
 	          <NewExternalPort>%d</NewExternalPort>
-	          <NewProtocol>UDP</NewProtocol>
+	          <NewProtocol>%s</NewProtocol>
 	          <NewInternalPort>%d</NewInternalPort>
 	          <NewInternalClient>%s</NewInternalClient>
 	          <NewEnabled>1</NewEnabled>
@@ -39,7 +40,7 @@ const (
 		<s:Body>
 			<u:DeletePortMapping xmlns:u="urn:schemas-upnp-org:service:WANIPConnection:1">
 				<NewRemoteHost></NewRemoteHost>
-				<NewProtocol>UDP</NewProtocol>
+				<NewProtocol>%s</NewProtocol>
 				<NewExternalPort>%d</NewExternalPort>
 			</u:DeletePortMapping>
 		</s:Body>
@@ -57,6 +58,6 @@ type UPNPForwarder struct {
 }
 
 type UPNPInformation struct {
-	Key string
+	Key   string
 	Value string
 }
