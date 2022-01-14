@@ -2,6 +2,9 @@
 cd config
 go build
 cd ..
+cd netutils
+go build
+cd ..
 cd portforwarder
 go build
 cd ..

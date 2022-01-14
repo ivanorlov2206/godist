@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"os"
 	"strconv"
+	"github.com/kk222mo/godist/netutils"
 	"strings"
 )
 
@@ -38,7 +39,7 @@ func (upnpForwarder UPNPForwarder) changeForwarding(protocol string, mode int, r
 	var upnpInformationStream chan UPNPInformation
 	upnpInformationStream = make(chan UPNPInformation)
 	fmt.Println(upnpForwarder.upnpInterfaces)
-	localIp := GetOutboundIP()
+	localIp := netutils.GetOutboundIP()
 	var mRes bool
 	if len(upnpForwarder.upnpInterfaces) == 0 {
 		upnpForwarder.ssdpReq(upnpInformationStream)
@@ -125,7 +126,7 @@ func (upnpForwarder UPNPForwarder) ssdpReq(upnpInformationStream chan UPNPInform
 func (upnpForwarder UPNPForwarder) listenForSsdpResponse(readyStream chan string, upnpInformationStream chan UPNPInformation) {
 	addr := net.UDPAddr{
 		Port: upnpForwarder.SsdpPort,
-		IP:   GetOutboundIP(),
+		IP:   netutils.GetOutboundIP(),
 	}
 	conn, err := net.ListenUDP(ssdpProto, &addr)
 	if err != nil {

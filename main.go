@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
-	//"github.com/kk222mo/godist/portforwarder"
+	"github.com/kk222mo/godist/portforwarder"
 	"github.com/kk222mo/godist/kademlia"
 )
 
@@ -19,14 +19,14 @@ func dfs(v *kademlia.Vertex, level int, path []string) {
 }
 
 func main() {
-	/*fmt.Println("Starting port forwarding")
+	fmt.Println("Starting port forwarding")
 	forwarder := portforwarder.NewUPNPForwarder(22222, 33334, 33334)
 	readyStream := make(chan string)
 	portforwarder.StartForwarding("tcp", forwarder, readyStream)
 	<-readyStream
 	for {
 
-	}*/
+	}
 	v := kademlia.Vertex{PrefixLen: 0, Bucket: kademlia.KBucket{}}
 	fmt.Println(v)
 	f, err := os.Create("out.txt")
