@@ -2,28 +2,32 @@ package networking
 
 import (
 	"fmt"
-	"net"
-	"strconv"
 	"github.com/kk222mo/godist/config"
 	"github.com/kk222mo/godist/netutils"
+	"net"
+	"strconv"
 )
 
 func handleClientTCP(conn net.Conn) {
+	defer conn.Close()
 	data := make([]byte, config.NODE_PACKET_SIZE)
 	for {
 		_, err := conn.Read(data)
 		if err != nil {
 			fmt.Println("Some bad information from socket")
-		} else {
-
+			continue
 		}
+		nodeMessage, err := ParseNodeMessage(data)
+		if (err != nil) {
+			continue
+		}
+		fmt.Println(nodeMessage)
 	}
 
-	conn.Close()
 }
 
 func ServeTCP() {
-	listener, err := net.Listen("tcp", netutils.GetOutboundIP().String() + ":" + strconv.Itoa(config.DEFAULT_INTERNAL_PORT))
+	listener, err := net.Listen("tcp", netutils.GetOutboundIP().String()+":"+strconv.Itoa(config.DEFAULT_INTERNAL_PORT))
 	defer listener.Close()
 	if err != nil {
 		fmt.Println("Error: Can't start TCP listening:", err)
@@ -39,11 +43,17 @@ func ServeTCP() {
 }
 
 func ServeUDP() {
-	listener, err := net.Listen("udp", netutils.GetOutboundIP().String() + ":" + strconv.Itoa(config.DEFAULT_INTERNAL_PORT))
+	addr := net.UDPAddr{
+		Port: config.DEFAULT_INTERNAL_PORT,
+		IP: netutils.GetOutboundIP()
+	}
+	listener, err := net.ListenUDP("udp", addr)
 	defer listener.Close()
 	if err != nil {
 		fmt.Println("Error: Can't start UDP listening:", err)
 		return
 	}
-	
+	for {
+		rlen, remote, err := listener.
+	}
 }

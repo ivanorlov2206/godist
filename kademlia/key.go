@@ -1,6 +1,7 @@
 package kademlia
 
 import (
+	"encoding/hex"
 	"fmt"
 	"github.com/kk222mo/godist/config"
 	"math/rand"
@@ -30,6 +31,16 @@ func (k Key) ToBinaryString() string {
 		res += fmt.Sprintf("%08b", k.Data[i])
 	}
 	return res
+}
+
+func KeyFromHexString(s string) (Key, error) {
+	data, err := hex.DecodeString(s)
+	if err != nil {
+		return Key{}, err
+	}
+	var keyData [config.KEY_SIZE]byte
+	copy(keyData[:], data)
+	return Key{Data: keyData}, nil
 }
 
 func GenerateRandomKey() Key {
